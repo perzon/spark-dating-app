@@ -1111,14 +1111,20 @@ async function handleSignedIn(session) {
     const exists = await loadUserProfile(session.user.id);
     console.log('[spark] user profile exists:', exists);
     if (exists) {
-      buildMatches(); updateUserAvatar(); showPage('page-matches');
+      buildMatches(); updateUserAvatar();
+      console.log('[spark] showing matches');
+      showPage('page-matches');
     } else {
       const pending = JSON.parse(sessionStorage.getItem('spark_pending') || 'null');
+      console.log('[spark] pending:', JSON.stringify(pending));
       if (pending) {
         user = pending; answers = new Array(QUESTIONS.length).fill(null);
         sessionStorage.removeItem('spark_pending');
-        current = 0; buildProgressDots(); renderQuestion(); showPage('page-quiz');
+        current = 0; buildProgressDots(); renderQuestion();
+        console.log('[spark] showing quiz');
+        showPage('page-quiz');
       } else {
+        console.log('[spark] showing signup');
         showPage('page-signup');
       }
     }
