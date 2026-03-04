@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Spark — Find Your Match</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── RESET ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:        #FBF5EF;
+      --surface:   #FFFFFF;
+      --rose:      #C84B6A;
+      --rose-soft: #F0D0DA;
+      --peach:     #E8927C;
+      --cream:     #F7EFE7;
+      --border:    #EDE4DC;
+      --text:      #1C1008;
+      --mid:       #6B5A4E;
+      --muted:     #A8937F;
+      --green:     #2D8A5E;
+      --green-soft:#D4EFE4;
+      --amber:     #B87020;
+      --amber-soft:#F5E8D0;
+      --r:         20px;
+    }
+
+    html, body { height: 100%; overflow: hidden; background: var(--bg);
+      font-family: 'DM Sans', sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+
+    #app { height: 100dvh; position: relative; overflow: hidden; }
+
+    /* ─── PAGES ─────────────────────────────────────────── */
+    .page {
+      position: absolute; inset: 0; opacity: 0; pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.38s ease, transform 0.38s ease;
+      overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+    }
+    .page.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+    .page::-webkit-scrollbar { width: 4px; }
+    .page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* ══════════════════════════════════════════════════════
+       SIGNUP
+    ══════════════════════════════════════════════════════ */
+    #page-signup { display: grid; grid-template-columns: 1fr 1fr; height: 100dvh; overflow: hidden; }
+
+    .signup-hero { position: relative; overflow: hidden; }
+    .signup-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .signup-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, rgba(28,10,8,0.18) 0%, rgba(200,75,106,0.55) 100%);
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 44px 40px;
+    }
+    .hero-brand { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 600;
+      color: #fff; line-height: 1.1; letter-spacing: -0.5px; }
+    .hero-brand em { font-style: italic; }
+    .hero-tagline { color: rgba(255,255,255,0.82); font-size: 1rem; margin-top: 10px; font-weight: 300; }
+    .hero-dots { display: flex; gap: 6px; margin-top: 28px; }
+    .hero-dots span { width: 28px; height: 3px; border-radius: 99px; background: rgba(255,255,255,0.4); }
+    .hero-dots span:first-child { background: #fff; width: 40px; }
+
+    .signup-form-panel { overflow-y: auto; display: flex; flex-direction: column;
+      justify-content: center; padding: 48px; background: var(--bg); }
+    .signup-form-panel::-webkit-scrollbar { display: none; }
+
+    .form-heading { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 600;
+      color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+    .form-heading em { color: var(--rose); font-style: italic; }
+    .form-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--mid); margin-bottom: 8px; }
+    .field input, .field select {
+      width: 100%; padding: 14px 18px; background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 0.97rem; color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s; appearance: none; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus {
+      outline: none; border-color: var(--rose); box-shadow: 0 0 0 4px rgba(200,75,106,0.1); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .cta-btn { width: 100%; padding: 16px; background: var(--text); color: #fff; border: none;
+      border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+      cursor: pointer; margin-top: 8px; transition: background 0.2s, transform 0.15s, box-shadow 0.2s; }
+    .cta-btn:hover { background: var(--rose); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,75,106,0.3); }
+    .cta-btn:active { transform: translateY(0); }
+    .form-error { color: var(--rose); font-size: 0.82rem; margin-bottom: 10px; display: none; }
+
+    @media (max-width: 768px) {
+      #page-signup { grid-template-columns: 1fr; }
+      .signup-hero { display: none; }
+      .signup-form-panel { justify-content: flex-start; padding: 0; }
+      .mobile-hero { height: 220px; position: relative; overflow: hidden; flex-shrink: 0; }
+      .mobile-hero img { width:100%; height:100%; object-fit:cover; }
+      .mobile-hero-overlay { position:absolute; inset:0;
+        background: linear-gradient(to bottom, transparent 30%, rgba(28,10,8,0.6));
+        display:flex; align-items:flex-end; padding:20px 24px; }
+      .mobile-hero-brand { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:600; color:#fff; }
+      .mobile-hero-brand em { font-style:italic; }
+      .mobile-form-inner { padding: 28px 24px 40px; flex:1; overflow-y:auto; }
+      .mobile-form-inner::-webkit-scrollbar { display:none; }
+      .form-heading { font-size: 1.5rem; }
+      .form-sub { margin-bottom: 24px; }
+    }
+    @media (min-width: 769px) {
+      .mobile-hero { display: none !important; }
+      .mobile-form-inner { display: contents; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       QUIZ
+    ══════════════════════════════════════════════════════ */
+    #page-quiz { display:flex; flex-direction:column; height:100dvh; background:var(--bg); overflow:hidden; }
+
+    .quiz-topbar { flex-shrink:0; padding-top: max(env(safe-area-inset-top,0px),20px); padding-left:28px; padding-right:28px; }
+    .quiz-topbar-inner { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .quiz-brand { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:600; color:var(--text); }
+    .quiz-step-text { font-size:0.78rem; font-weight:600; color:var(--muted); letter-spacing:0.3px; }
+
+    .progress-dots { display:flex; gap:5px; }
+    .progress-dot { flex:1; height:3px; border-radius:99px; background:var(--border); transition:background 0.35s ease; }
+    .progress-dot.done { background:var(--rose); }
+    .progress-dot.active { background:var(--peach); }
+
+    .quiz-body { flex:1; display:flex; flex-direction:column; padding:32px 28px 24px;
+      overflow-y:auto; overscroll-behavior:contain; }
+    .quiz-body::-webkit-scrollbar { display:none; }
+
+    .q-icon { font-size:2.4rem; line-height:1; margin-bottom:16px; display:block; }
+    .q-text { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,4vw,2rem); font-weight:600;
+      color:var(--text); line-height:1.35; margin-bottom:32px; max-width:520px; }
+
+    .options-list { display:flex; flex-direction:column; gap:10px; }
+    .opt { display:flex; align-items:center; gap:16px; padding:16px 20px; background:var(--surface);
+      border:1.5px solid var(--border); border-radius:16px; cursor:pointer;
+      transition:border-color 0.18s, background 0.18s, transform 0.12s; user-select:none; }
+    .opt:hover { border-color:var(--rose); background:#FFF8F8; transform:translateX(3px); }
+    .opt.selected { border-color:var(--rose); background:linear-gradient(135deg,#FDF0F4,#FFF5F0); transform:translateX(3px); }
+    .opt-icon { font-size:1.3rem; flex-shrink:0; width:28px; text-align:center; }
+    .opt-text { font-size:0.95rem; color:var(--text); font-weight:400; line-height:1.4; flex:1; }
+    .opt.selected .opt-text { color:var(--rose); font-weight:500; }
+    .opt-check { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; transition:all 0.18s; font-size:0.75rem; color:transparent; }
+    .opt.selected .opt-check { background:var(--rose); border-color:var(--rose); color:#fff; }
+
+    .quiz-footer { flex-shrink:0; padding:16px 28px; padding-bottom:max(env(safe-area-inset-bottom,0px),24px);
+      background:var(--bg); border-top:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .btn-back { width:48px; height:48px; border-radius:14px; border:1.5px solid var(--border);
+      background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:1.1rem; color:var(--mid); transition:border-color 0.18s; flex-shrink:0; }
+    .btn-back:hover { border-color:var(--rose); color:var(--rose); }
+    .btn-back.hidden { visibility:hidden; }
+    .btn-next { flex:1; padding:15px; background:var(--text); color:#fff; border:none; border-radius:16px;
+      font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer;
+      transition:background 0.2s, transform 0.15s, box-shadow 0.2s; }
+    .btn-next:hover:not(:disabled) { background:var(--rose); transform:translateY(-1px); box-shadow:0 6px 18px rgba(200,75,106,0.3); }
+    .btn-next:disabled { opacity:0.35; cursor:default; transform:none; box-shadow:none; }
+
+    @media (min-width: 900px) {
+      #page-quiz { align-items:center; }
+      .quiz-topbar, .quiz-body, .quiz-footer { width:100%; max-width:640px; align-self:center; }
+      .quiz-footer { border:none; border-top:1px solid var(--border); }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MATCHES PAGE
+    ══════════════════════════════════════════════════════ */
+    #page-matches { display:flex; flex-direction:column; height:100dvh; background:var(--bg); overflow:hidden; }
+
+    .matches-header { flex-shrink:0; background:var(--bg); border-bottom:1px solid var(--border);
+      padding:max(env(safe-area-inset-top,0px),20px) 24px 16px; }
+    .matches-header-inner { display:flex; align-items:flex-end; justify-content:space-between;
+      max-width:960px; margin:0 auto; }
+    .matches-brand { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:600; color:var(--text); }
+    .matches-greeting { font-size:0.82rem; color:var(--muted); margin-top:2px; }
+    .matches-greeting strong { color:var(--rose); font-weight:600; }
+    .restart-pill { padding:8px 16px; border:1.5px solid var(--border); border-radius:99px;
+      background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600;
+      color:var(--mid); cursor:pointer; transition:border-color 0.18s, color 0.18s; white-space:nowrap; }
+    .restart-pill:hover { border-color:var(--rose); color:var(--rose); }
+    .matches-sub { max-width:960px; margin:10px auto 0; font-size:0.82rem; color:var(--muted); }
+
+    .matches-scroll { flex:1; overflow-y:auto; padding:20px 20px max(env(safe-area-inset-bottom,0px),28px);
+      overscroll-behavior:contain; }
+    .matches-scroll::-webkit-scrollbar { width:4px; }
+    .matches-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+
+    .matches-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:16px; max-width:960px; margin:0 auto; }
+
+    .pcard { border-radius:var(--r); overflow:hidden; background:var(--surface);
+      box-shadow:0 2px 16px rgba(28,10,8,0.08); transition:transform 0.22s, box-shadow 0.22s; cursor:pointer; }
+    .pcard:hover { transform:translateY(-5px); box-shadow:0 12px 32px rgba(28,10,8,0.14); }
+
+    .pcard-photo { width:100%; aspect-ratio:3/4; position:relative; overflow:hidden; background:var(--cream); }
+    .pcard-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.4s ease; }
+    .pcard:hover .pcard-photo img { transform:scale(1.04); }
+    .avatar-fallback { display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:4rem; }
+    .pcard-photo img.errored { display:none; }
+    .pcard-photo img.errored + .avatar-fallback { display:flex; }
+
+    .pcard-photo-overlay { position:absolute; bottom:0; left:0; right:0;
+      background:linear-gradient(to top, rgba(28,10,8,0.82) 0%, transparent 60%); padding:36px 16px 14px; }
+    .pcard-name { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:600; color:#fff; line-height:1.2; }
+    .pcard-location { font-size:0.75rem; color:rgba(255,255,255,0.72); margin-top:2px; }
+
+    .match-pct-badge { position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.95);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:99px; padding:5px 12px;
+      font-size:0.8rem; font-weight:700; color:var(--rose); box-shadow:0 2px 10px rgba(0,0,0,0.12); }
+    .best-match-badge { position:absolute; top:12px; left:12px; background:var(--rose);
+      border-radius:99px; padding:5px 12px; font-size:0.72rem; font-weight:700; color:#fff; letter-spacing:0.3px; }
+
+    .pcard-body { padding:14px 16px 16px; }
+    .pcard-bio { font-size:0.8rem; color:var(--mid); line-height:1.5; margin-bottom:10px; }
+    .pcard-tags { display:flex; flex-wrap:wrap; gap:5px; }
+    .ptag { font-size:0.68rem; font-weight:600; padding:3px 9px; border-radius:99px; background:var(--cream); color:var(--mid); }
+    .ptag.shared { background:var(--rose-soft); color:var(--rose); }
+
+    @media (max-width: 480px) {
+      .matches-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
+      .pcard-body { padding:10px 12px 12px; }
+      .pcard-bio { display:none; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       PROFILE MODAL
+    ══════════════════════════════════════════════════════ */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(28,10,8,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    #modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #modal {
+      width: 100%;
+      max-width: 960px;
+      max-height: 90dvh;
+      background: var(--surface);
+      border-radius: 28px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1);
+      box-shadow: 0 32px 80px rgba(28,10,8,0.3);
+    }
+    #modal-overlay.open #modal {
+      transform: translateY(0) scale(1);
+    }
+
+    /* ── Modal Left (photo + summary) ── */
+    .modal-left {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--cream);
+    }
+
+    .modal-photo-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 280px;
+      overflow: hidden;
+    }
+    .modal-photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .modal-photo-wrap .avatar-fallback-modal {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 6rem;
+      background: var(--cream);
+    }
+    .modal-photo-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(28,10,8,0.9) 0%, transparent 65%);
+      padding: 48px 24px 22px;
+    }
+    .modal-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .modal-meta {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.75);
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Score ring section */
+    .modal-score-section {
+      padding: 20px 24px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .score-ring-wrap { position: relative; flex-shrink: 0; }
+    .score-ring-wrap svg { display: block; transform: rotate(-90deg); }
+    .score-ring-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .score-ring-pct {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--rose);
+      line-height: 1;
+    }
+    .score-ring-sub { font-size: 0.6rem; color: var(--muted); font-weight: 600; margin-top: 1px; }
+
+    .modal-score-text { flex: 1; }
+    .modal-score-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .modal-score-desc { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+
+    .modal-bio-section {
+      padding: 0 24px 20px;
+      font-size: 0.85rem;
+      color: var(--mid);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    /* ── Modal Right (questions breakdown) ── */
+    .modal-right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-left: 1px solid var(--border);
+    }
+
+    .modal-right-header {
+      flex-shrink: 0;
+      padding: 24px 28px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-right-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-right-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    .modal-close {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      color: var(--mid);
+      transition: border-color 0.18s, color 0.18s, background 0.18s;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { border-color: var(--rose); color: var(--rose); background: var(--rose-soft); }
+
+    .modal-questions-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 28px 32px;
+      overscroll-behavior: contain;
+    }
+    .modal-questions-scroll::-webkit-scrollbar { width: 4px; }
+    .modal-questions-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* ── Per-question row ── */
+    .mq-row {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .mq-row:last-child { border-bottom: none; }
+
+    .mq-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .mq-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .mq-label {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .mq-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .mq-weight-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .mq-match-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .mq-match-pill.perfect { background: var(--green-soft); color: var(--green); }
+    .mq-match-pill.close   { background: var(--amber-soft); color: var(--amber); }
+    .mq-match-pill.diff    { background: var(--cream);      color: var(--muted); }
+
+    /* Answer comparison */
+    .mq-answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .mq-answer-card {
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1.5px solid transparent;
+    }
+    .mq-answer-who {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+    .mq-answer-text {
+      font-size: 0.82rem;
+      line-height: 1.35;
+      font-weight: 400;
+    }
+
+    .mq-answer-card.you {
+      background: #F0F4FF;
+      border-color: #C8D4F0;
+    }
+    .mq-answer-card.you .mq-answer-who { color: #4A6AB0; }
+    .mq-answer-card.you .mq-answer-text { color: #2C3E80; }
+
+    .mq-answer-card.them {
+      background: var(--rose-soft);
+      border-color: #DCA8B8;
+    }
+    .mq-answer-card.them .mq-answer-who { color: var(--rose); }
+    .mq-answer-card.them .mq-answer-text { color: #8B2040; }
+
+    /* If match — unified color */
+    .mq-answer-card.you.matched {
+      background: var(--green-soft);
+      border-color: #90CDB0;
+    }
+    .mq-answer-card.you.matched .mq-answer-who { color: var(--green); }
+    .mq-answer-card.you.matched .mq-answer-text { color: #1A5C3A; }
+
+    .mq-answer-card.them.matched {
+      background: var(--green-soft);
+      border-color: #90CDB0;
+    }
+    .mq-answer-card.them.matched .mq-answer-who { color: var(--green); }
+    .mq-answer-card.them.matched .mq-answer-text { color: #1A5C3A; }
+
+    /* Compat bar */
+    .mq-bar-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .mq-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    .mq-bar-fill.perfect { background: var(--green); }
+    .mq-bar-fill.close   { background: var(--amber); }
+    .mq-bar-fill.diff    { background: var(--border); }
+
+    /* ══════════════════════════════════════════════════════
+       MOBILE MODAL
+    ══════════════════════════════════════════════════════ */
+    @media (max-width: 700px) {
+      #modal-overlay { padding: 0; align-items: flex-end; }
+      #modal {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        max-width: 100%;
+        max-height: 95dvh;
+        border-radius: 28px 28px 0 0;
+        transform: translateY(100%);
+      }
+      #modal-overlay.open #modal { transform: translateY(0); }
+
+      .modal-left {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        grid-template-rows: auto auto;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal-photo-wrap {
+        grid-row: 1 / 3;
+        min-height: 160px;
+        border-radius: 0;
+      }
+      .modal-photo-overlay { padding: 20px 16px 14px; }
+      .modal-name { font-size: 1.1rem; }
+
+      .modal-score-section {
+        padding: 14px 16px;
+        border-top: none;
+        border-left: 1px solid var(--border);
+      }
+      .modal-bio-section {
+        padding: 10px 16px 14px;
+        border-top: 1px solid var(--border);
+        border-left: 1px solid var(--border);
+        font-size: 0.8rem;
+        grid-column: 2;
+      }
+
+      .modal-right { border-left: none; border-top: 1px solid var(--border); }
+      .modal-right-header { padding: 18px 20px 14px; }
+      .modal-questions-scroll { padding: 0 20px 32px; }
+      .mq-answers { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       PROFILE EDIT PAGE
+    ══════════════════════════════════════════════════════ */
+    #page-profile { display:flex; flex-direction:column; height:100dvh; background:var(--bg); }
+
+    .profile-topbar {
+      flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+      padding:max(env(safe-area-inset-top,0px),16px) 20px 16px;
+      background:var(--bg); border-bottom:1px solid var(--border); gap:12px;
+    }
+    .profile-back-btn {
+      display:flex; align-items:center; gap:6px; padding:8px 14px;
+      border:1.5px solid var(--border); border-radius:99px; background:var(--surface);
+      font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600;
+      color:var(--mid); cursor:pointer; transition:border-color 0.18s, color 0.18s; flex-shrink:0;
+    }
+    .profile-back-btn:hover { border-color:var(--rose); color:var(--rose); }
+    .profile-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--text); }
+    .profile-save-btn {
+      padding:9px 18px; background:var(--text); color:#fff; border:none;
+      border-radius:99px; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600;
+      cursor:pointer; transition:background 0.2s, transform 0.15s, box-shadow 0.2s; flex-shrink:0;
+    }
+    .profile-save-btn:hover { background:var(--rose); transform:translateY(-1px); box-shadow:0 6px 18px rgba(200,75,106,0.3); }
+
+    .profile-body {
+      flex:1; overflow-y:auto; overscroll-behavior:contain;
+      padding:24px 20px max(env(safe-area-inset-bottom,0px),32px);
+    }
+    .profile-body::-webkit-scrollbar { width:4px; }
+    .profile-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+
+    .profile-layout { display:flex; gap:24px; max-width:960px; margin:0 auto; align-items:flex-start; }
+
+    /* Left panel */
+    .profile-left { width:300px; flex-shrink:0; position:sticky; top:0; display:flex; flex-direction:column; gap:16px; }
+
+    /* Photo card */
+    .photo-card {
+      background:var(--surface); border:1.5px solid var(--border); border-radius:20px;
+      overflow:hidden; cursor:pointer; transition:border-color 0.18s;
+    }
+    .photo-card:hover { border-color:var(--rose); }
+    .photo-card-inner {
+      aspect-ratio:3/4; background:var(--cream);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:10px; position:relative; overflow:hidden;
+    }
+    .photo-card-img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; display:none; }
+    .photo-card-img.has-photo { display:block; }
+    .photo-card-placeholder { display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .photo-card-icon { font-size:2.5rem; }
+    .photo-card-hint { font-size:0.8rem; color:var(--muted); text-align:center; padding:0 16px; }
+    .photo-card-overlay {
+      position:absolute; inset:0; background:rgba(28,10,8,0.45);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity 0.18s;
+    }
+    .photo-card:hover .photo-card-overlay { opacity:1; }
+    .photo-card-overlay-text { color:#fff; font-size:0.85rem; font-weight:600; }
+    .photo-remove-link {
+      text-align:center; padding:10px; font-size:0.78rem; color:var(--rose);
+      cursor:pointer; font-weight:500; border-top:1px solid var(--border); display:none;
+    }
+    .photo-remove-link.visible { display:block; }
+
+    /* ── Button selector (replaces <select> for gender/preference) ── */
+    .btn-select { display:flex; gap:8px; }
+    .btn-sel-opt {
+      flex:1; padding:11px 6px 10px; border:1.5px solid var(--border); border-radius:14px;
+      background:var(--surface); font-family:'DM Sans',sans-serif;
+      color:var(--mid); cursor:pointer; text-align:center;
+      display:flex; flex-direction:column; align-items:center; gap:5px;
+      transition:border-color 0.18s, background 0.18s, color 0.18s, transform 0.12s;
+      user-select:none;
+    }
+    .btn-sel-opt:hover { border-color:var(--rose); color:var(--rose); background:#FFF8F8; transform:translateY(-1px); }
+    .btn-sel-opt.selected {
+      border-color:var(--rose); background:var(--rose-soft); color:var(--rose);
+      transform:translateY(-1px); box-shadow:0 4px 12px rgba(200,75,106,0.15);
+    }
+    .btn-sel-opt .sel-icon { font-size:1.35rem; line-height:1; }
+    .btn-sel-opt .sel-label { font-size:0.72rem; font-weight:600; letter-spacing:0.2px; }
+
+    /* Basic info card */
+    .profile-info-card { background:var(--surface); border:1.5px solid var(--border); border-radius:20px; padding:20px; }
+    .profile-info-card .form-error { margin-top:8px; margin-bottom:0; }
+
+    /* Right panel */
+    .profile-right { flex:1; display:flex; flex-direction:column; gap:12px; }
+
+    /* Answer edit card */
+    .answer-card { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:18px; }
+    .answer-card-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .answer-card-icon { font-size:1.1rem; flex-shrink:0; }
+    .answer-card-label { flex:1; font-size:0.88rem; font-weight:600; color:var(--text); line-height:1.35; }
+    .answer-key-badge {
+      font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+      padding:2px 7px; border-radius:99px; background:var(--amber-soft); color:var(--amber); flex-shrink:0;
+    }
+    .answer-pills { display:flex; flex-wrap:wrap; gap:8px; }
+    .answer-pill {
+      padding:7px 14px; border:1.5px solid var(--border); border-radius:99px;
+      background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500;
+      color:var(--mid); cursor:pointer; transition:border-color 0.18s, background 0.18s, color 0.18s; user-select:none;
+    }
+    .answer-pill:hover { border-color:var(--rose); color:var(--rose); }
+    .answer-pill.selected { border-color:var(--rose); background:var(--rose-soft); color:var(--rose); font-weight:600; }
+
+    /* User avatar button in matches header */
+    .user-avatar-btn {
+      width:36px; height:36px; border-radius:50%; border:2px solid var(--border);
+      background:var(--cream); cursor:pointer; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.75rem; font-weight:700; color:var(--rose);
+      transition:border-color 0.18s, box-shadow 0.18s; flex-shrink:0; padding:0;
+    }
+    .user-avatar-btn:hover { border-color:var(--rose); box-shadow:0 0 0 3px var(--rose-soft); }
+    .user-avatar-btn img { width:100%; height:100%; object-fit:cover; display:none; }
+    .user-avatar-btn img.has-photo { display:block; }
+
+    @media (max-width: 899px) {
+      .profile-left { width:100%; position:static; }
+      .profile-layout { flex-direction:column; }
+      .photo-card-inner { aspect-ratio:4/3; max-height:260px; }
+    }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.3s ease both; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.35s ease both; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════ SIGNUP ══════════════════ -->
+  <div id="page-signup" class="page active">
+    <div class="signup-hero">
+      <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=900&h=1200&fit=crop&q=85" alt=""/>
+      <div class="signup-hero-overlay">
+        <div class="hero-brand">Find your<br/><em>person.</em></div>
+        <div class="hero-tagline">Ten honest questions. One perfect match.</div>
+        <div class="hero-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div class="signup-form-panel">
+      <div class="mobile-hero">
+        <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=900&h=400&fit=crop&crop=top&q=80" alt=""/>
+        <div class="mobile-hero-overlay">
+          <div class="mobile-hero-brand">Spark <em>✦</em></div>
+        </div>
+      </div>
+      <div class="mobile-form-inner">
+        <div class="form-heading">Let's find<br/><em>your match.</em></div>
+        <div class="form-sub">A few things about you to get started.</div>
+        <div class="field-row">
+          <div class="field">
+            <label>First name</label>
+            <input type="text" id="inp-name" placeholder="Alex" maxlength="30" autocomplete="given-name"/>
+          </div>
+          <div class="field">
+            <label>Age</label>
+            <input type="number" id="inp-age" placeholder="27" min="18" max="99" inputmode="numeric"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>I am a</label>
+          <div class="btn-select" id="inp-gender" data-value="">
+            <button type="button" class="btn-sel-opt" data-value="man" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">👨</span><span class="sel-label">Man</span>
+            </button>
+            <button type="button" class="btn-sel-opt" data-value="woman" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">👩</span><span class="sel-label">Woman</span>
+            </button>
+            <button type="button" class="btn-sel-opt" data-value="other" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">🌈</span><span class="sel-label">Other</span>
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>I'm looking for</label>
+          <div class="btn-select" id="inp-pref" data-value="">
+            <button type="button" class="btn-sel-opt" data-value="woman" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">👩</span><span class="sel-label">Women</span>
+            </button>
+            <button type="button" class="btn-sel-opt" data-value="man" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">👨</span><span class="sel-label">Men</span>
+            </button>
+            <button type="button" class="btn-sel-opt" data-value="any" onclick="selectBtnGroup(this)">
+              <span class="sel-icon">✨</span><span class="sel-label">Everyone</span>
+            </button>
+          </div>
+        </div>
+        <p id="signup-err" class="form-error">Please fill in all fields to continue.</p>
+        <button class="cta-btn" onclick="startQuiz()">Begin the quiz &nbsp;→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ QUIZ ══════════════════ -->
+  <div id="page-quiz" class="page">
+    <div class="quiz-topbar">
+      <div class="quiz-topbar-inner">
+        <div class="quiz-brand">Spark ✦</div>
+        <div class="quiz-step-text" id="q-step">1 of 10</div>
+      </div>
+      <div class="progress-dots" id="progress-dots"></div>
+    </div>
+    <div class="quiz-body" id="quiz-body">
+      <span class="q-icon" id="q-icon"></span>
+      <div class="q-text" id="q-text"></div>
+      <div class="options-list" id="options-list"></div>
+    </div>
+    <div class="quiz-footer">
+      <button class="btn-back" id="btn-back" onclick="quizGo(-1)">←</button>
+      <button class="btn-next" id="btn-next" onclick="quizGo(1)" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ MATCHES ══════════════════ -->
+  <div id="page-matches" class="page">
+    <div class="matches-header">
+      <div class="matches-header-inner">
+        <div>
+          <div class="matches-brand">Spark ✦</div>
+          <div class="matches-greeting" id="matches-greeting"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="restart-pill" onclick="restart()">↺ Retake</button>
+          <button class="user-avatar-btn" id="user-avatar-btn" onclick="openProfilePage()" title="Edit profile">
+            <img id="user-avatar-img" alt=""/>
+            <span id="user-avatar-initials"></span>
+          </button>
+        </div>
+      </div>
+      <div class="matches-sub" id="matches-sub"></div>
+    </div>
+    <div class="matches-scroll">
+      <div class="matches-grid" id="matches-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ PROFILE EDIT ══════════════════ -->
+  <div id="page-profile" class="page">
+    <div class="profile-topbar">
+      <button class="profile-back-btn" onclick="showPage('page-matches')">← Matches</button>
+      <div class="profile-title">Spark ✦</div>
+      <button class="profile-save-btn" onclick="saveProfile()">Save changes</button>
+    </div>
+    <div class="profile-body">
+      <div class="profile-layout">
+        <div class="profile-left">
+          <div class="photo-card" id="photo-card" onclick="triggerPhotoUpload()">
+            <div class="photo-card-inner">
+              <img class="photo-card-img" id="photo-card-img" alt="Your photo"/>
+              <div class="photo-card-placeholder" id="photo-placeholder">
+                <div class="photo-card-icon">📸</div>
+                <div class="photo-card-hint">Click to upload your photo</div>
+              </div>
+              <div class="photo-card-overlay"><div class="photo-card-overlay-text">Change photo</div></div>
+            </div>
+            <div class="photo-remove-link" id="photo-remove-link" onclick="removePhoto(event)">Remove photo</div>
+          </div>
+          <input type="file" accept="image/*" id="photo-input" style="display:none" onchange="handlePhotoUpload(event)"/>
+          <div class="profile-info-card">
+            <div class="field-row">
+              <div class="field">
+                <label>First name</label>
+                <input type="text" id="prof-name" placeholder="Alex" maxlength="30" autocomplete="given-name"/>
+              </div>
+              <div class="field">
+                <label>Age</label>
+                <input type="number" id="prof-age" placeholder="27" min="18" max="99" inputmode="numeric"/>
+              </div>
+            </div>
+            <div class="field">
+              <label>I am a</label>
+              <div class="btn-select" id="prof-gender" data-value="">
+                <button type="button" class="btn-sel-opt" data-value="man" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">👨</span><span class="sel-label">Man</span>
+                </button>
+                <button type="button" class="btn-sel-opt" data-value="woman" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">👩</span><span class="sel-label">Woman</span>
+                </button>
+                <button type="button" class="btn-sel-opt" data-value="other" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">🌈</span><span class="sel-label">Other</span>
+                </button>
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>I'm looking for</label>
+              <div class="btn-select" id="prof-pref" data-value="">
+                <button type="button" class="btn-sel-opt" data-value="woman" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">👩</span><span class="sel-label">Women</span>
+                </button>
+                <button type="button" class="btn-sel-opt" data-value="man" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">👨</span><span class="sel-label">Men</span>
+                </button>
+                <button type="button" class="btn-sel-opt" data-value="any" onclick="selectBtnGroup(this)">
+                  <span class="sel-icon">✨</span><span class="sel-label">Everyone</span>
+                </button>
+              </div>
+            </div>
+            <p id="profile-err" class="form-error">Please fill in all fields.</p>
+          </div>
+        </div>
+        <div class="profile-right" id="profile-answers"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ PROFILE MODAL ══════════════════ -->
+  <div id="modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="modal">
+
+      <!-- Left: photo + score -->
+      <div class="modal-left">
+        <div class="modal-photo-wrap">
+          <img id="modal-img" src="" alt=""/>
+          <div class="avatar-fallback-modal" id="modal-emoji" style="display:none"></div>
+          <div class="modal-photo-overlay">
+            <div class="modal-name" id="modal-name"></div>
+            <div class="modal-meta" id="modal-meta"></div>
+          </div>
+        </div>
+
+        <div class="modal-score-section">
+          <div class="score-ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#EDE4DC" stroke-width="6"/>
+              <circle id="modal-ring-fill" cx="36" cy="36" r="28" fill="none" stroke="#C84B6A"
+                stroke-width="6" stroke-linecap="round"
+                stroke-dasharray="175.93" stroke-dashoffset="175.93"/>
+            </svg>
+            <div class="score-ring-label">
+              <div class="score-ring-pct" id="modal-pct">—</div>
+              <div class="score-ring-sub">MATCH</div>
+            </div>
+          </div>
+          <div class="modal-score-text">
+            <div class="modal-score-headline" id="modal-headline"></div>
+            <div class="modal-score-desc" id="modal-desc"></div>
+          </div>
+        </div>
+
+        <div class="modal-bio-section" id="modal-bio"></div>
+      </div>
+
+      <!-- Right: compatibility breakdown -->
+      <div class="modal-right">
+        <div class="modal-right-header">
+          <div>
+            <div class="modal-right-title">Compatibility Breakdown</div>
+            <div class="modal-right-sub">How your answers compare across all 10 questions</div>
+          </div>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-questions-scroll" id="modal-questions"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════════════
+const QUESTIONS = [
+  { icon:'🙏', text:'How important is religion or spirituality in your life?', weight:2,
+    options:[
+      { icon:'🧬', text:'Not important — I live by science and reason' },
+      { icon:'🌸', text:'Somewhat — I have my own quiet beliefs' },
+      { icon:'🕊️', text:'Very important — it shapes how I live every day' }
+    ]},
+  { icon:'👶', text:'Do you want children?', weight:2,
+    options:[
+      { icon:'👨‍👩‍👧', text:'Yes, definitely — I dream of a family' },
+      { icon:'🤔', text:'Maybe someday — I\'m open to it' },
+      { icon:'🌿', text:'No — I prefer a child-free life' },
+      { icon:'🧡', text:'I already have children' }
+    ]},
+  { icon:'⚡', text:'How would you describe yourself socially?', weight:1,
+    options:[
+      { icon:'🏠', text:'Total introvert — I recharge alone' },
+      { icon:'☯️', text:'Ambivert — I enjoy people but need my space' },
+      { icon:'🎉', text:'Total extrovert — I thrive around people' }
+    ]},
+  { icon:'💼', text:'What is your relationship with your career?', weight:1,
+    options:[
+      { icon:'🌅', text:'I work to live — a job is just a job' },
+      { icon:'⚖️', text:'Balance is key — career and life both matter' },
+      { icon:'🚀', text:'Career-driven — ambition defines me' }
+    ]},
+  { icon:'💰', text:'What is your approach to money?', weight:1,
+    options:[
+      { icon:'✨', text:'Spend freely — money is for enjoying life' },
+      { icon:'🏦', text:'Save some, spend some — balance matters' },
+      { icon:'🌱', text:'Very frugal — financial security is everything' }
+    ]},
+  { icon:'💕', text:'How important is physical affection to you?', weight:1,
+    options:[
+      { icon:'🗣️', text:'Not very — I show love through words and actions' },
+      { icon:'🤗', text:'Moderate — touch matters but isn\'t everything' },
+      { icon:'💞', text:'Essential — physical closeness is my love language' }
+    ]},
+  { icon:'🏡', text:'Where do you picture yourself living long-term?', weight:1,
+    options:[
+      { icon:'🏙️', text:'Big city — I love the energy and culture' },
+      { icon:'🌳', text:'Suburbs — the best of both worlds' },
+      { icon:'🌲', text:'Rural — peace, nature and space' },
+      { icon:'🌍', text:'Flexible — I\'ll go wherever life takes me' }
+    ]},
+  { icon:'💬', text:'How do you handle conflict in a relationship?', weight:1,
+    options:[
+      { icon:'🌊', text:'I need space first — I process alone before talking' },
+      { icon:'☕', text:'I talk it out calmly and openly right away' },
+      { icon:'⚡', text:'Direct and assertive — I want resolution fast' }
+    ]},
+  { icon:'🎨', text:'How do you spend most of your free time?', weight:1,
+    options:[
+      { icon:'🥾', text:'Outdoors and active — hiking, sport, adventures' },
+      { icon:'🥂', text:'Social and lively — parties, dinners, events' },
+      { icon:'🛋️', text:'Cozy at home — films, books, cooking' },
+      { icon:'🎨', text:'Creative hobbies — art, music, writing' }
+    ]},
+  { icon:'❤️', text:'What matters most to you in a relationship?', weight:1,
+    options:[
+      { icon:'🔥', text:'Deep passion and romance' },
+      { icon:'🏠', text:'Stability and security' },
+      { icon:'🌱', text:'Shared goals and growing together' },
+      { icon:'🎭', text:'Fun, laughter and adventure' }
+    ]}
+];
+
+const TAG_MAP = [
+  ['Secular','Spiritual','Faith-driven'],
+  ['Wants kids','Open to kids','Child-free','Has kids'],
+  ['Introvert','Ambivert','Extrovert'],
+  ['Work to live','Life-balanced','Career-driven'],
+  ['Free spender','Balanced','Frugal'],
+  ['Low touch','Affectionate','Very affectionate'],
+  ['City','Suburban','Country life','Nomadic'],
+  ['Needs space','Calm talker','Direct'],
+  ['Outdoorsy','Social','Homebody','Creative'],
+  ['Romantic','Stable','Goal-oriented','Adventurous']
+];
+
+const PROFILES = [
+  { id:0,  name:'Emma',   age:27, gender:'woman', city:'Stockholm',   photo:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,2,1,1,2,0,1,2,0], bio:'Coffee addict, dog lover, and weekend trail runner.' },
+  { id:1,  name:'Liam',   age:30, gender:'man',   city:'Gothenburg',  photo:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,0,1,2,1,1,0,2,0,3], bio:'Software engineer by day, rock climber by weekend.' },
+  { id:2,  name:'Sofia',  age:25, gender:'woman', city:'Malmö',       photo:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[2,0,0,0,2,1,2,0,3,1], bio:'Illustrator and introvert who loves rainy Sundays with a good book.' },
+  { id:3,  name:'Oscar',  age:32, gender:'man',   city:'Uppsala',     photo:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[1,1,1,1,1,2,1,1,1,2], bio:'Teacher, amateur chef, and forever curious about the world.' },
+  { id:4,  name:'Maja',   age:28, gender:'woman', city:'Linköping',   photo:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[0,2,2,1,0,0,3,2,1,3], bio:'Spontaneous traveler who turned wanderlust into a lifestyle.' },
+  { id:5,  name:'Erik',   age:35, gender:'man',   city:'Stockholm',   photo:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[2,0,0,0,2,1,2,1,3,1], bio:'Writer and minimalist. Passionate about slow mornings and good coffee.' },
+  { id:6,  name:'Klara',  age:29, gender:'woman', city:'Örebro',      photo:'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,1,1,2,1,2,0,1,0,2], bio:'Marketing manager who unwinds by trail running and cold dips.' },
+  { id:7,  name:'Noah',   age:26, gender:'man',   city:'Västerås',    photo:'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,0,2,0,0,2,0,2,1,3], bio:'Passionate cook, city explorer, and live-music junkie.' },
+  { id:8,  name:'Elin',   age:31, gender:'woman', city:'Helsingborg', photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,1,2,1,1,1,1,2,2], bio:'Startup founder who still makes time for yoga and long dinners with friends.' },
+  { id:9,  name:'Lucas',  age:28, gender:'man',   city:'Lund',        photo:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,1,0,1,0,0,3,0,3,3], bio:'Philosophy grad, board game enthusiast, and proud cat dad.' },
+  { id:10, name:'Astrid', age:33, gender:'woman', city:'Norrköping',  photo:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[2,0,0,0,2,2,2,1,3,1], bio:'Nurse and herbalist who deeply values quality time and real connection.' },
+  { id:11, name:'Felix',  age:27, gender:'man',   city:'Umeå',        photo:'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,2,2,1,0,2,3,2,3,0], bio:'Musician and snowboarder who lives for the next great experience.' },
+  { id:12, name:'Saga',   age:24, gender:'woman', city:'Jönköping',   photo:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,1,2,1,1,0,1,3,2], bio:'Biology student who finds magic in forests and the way science explains the world.' },
+  { id:13, name:'Axel',   age:34, gender:'man',   city:'Borås',       photo:'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[1,0,2,2,1,2,1,2,0,0], bio:'Personal trainer, film nerd, and unashamed hopeless romantic.' },
+  { id:14, name:'Vera',   age:26, gender:'woman', city:'Eskilstuna',  photo:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[0,1,1,1,0,1,3,0,2,3], bio:'Aerospace engineer who designs rockets but prefers hammocks and campfires.' }
+];
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let user           = null;
+let answers        = new Array(QUESTIONS.length).fill(null);
+let current        = 0;
+let rankedProfiles = [];
+let userPhoto      = null;
+let profileAnswers = [];
+
+// ══════════════════════════════════════════════════════════
+//  PERSISTENCE
+// ══════════════════════════════════════════════════════════
+function persistState() {
+  try {
+    localStorage.setItem('spark_user', JSON.stringify(user));
+    localStorage.setItem('spark_answers', JSON.stringify(answers));
+    localStorage.setItem('spark_photo', userPhoto || '');
+  } catch(e) {}
+}
+
+function loadPersistedState() {
+  try {
+    const savedUser    = localStorage.getItem('spark_user');
+    const savedAnswers = localStorage.getItem('spark_answers');
+    const savedPhoto   = localStorage.getItem('spark_photo');
+    if (savedUser && savedAnswers) {
+      user      = JSON.parse(savedUser);
+      answers   = JSON.parse(savedAnswers);
+      userPhoto = savedPhoto || null;
+      buildMatches();
+      updateUserAvatar();
+      showPage('page-matches');
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// ══════════════════════════════════════════════════════════
+//  PAGE TRANSITIONS
+// ══════════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════════════════════
+//  BUTTON SELECTOR HELPERS
+// ══════════════════════════════════════════════════════════
+function selectBtnGroup(btn) {
+  const group = btn.closest('.btn-select');
+  group.querySelectorAll('.btn-sel-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  group.dataset.value = btn.dataset.value;
+}
+function getBtnGroupValue(id) {
+  return document.getElementById(id).dataset.value || '';
+}
+function setBtnGroupValue(id, value) {
+  const group = document.getElementById(id);
+  group.querySelectorAll('.btn-sel-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === value);
+  });
+  group.dataset.value = value || '';
+}
+
+// ══════════════════════════════════════════════════════════
+//  SIGNUP
+// ══════════════════════════════════════════════════════════
+function startQuiz() {
+  const name   = document.getElementById('inp-name').value.trim();
+  const age    = parseInt(document.getElementById('inp-age').value, 10);
+  const gender = getBtnGroupValue('inp-gender');
+  const pref   = getBtnGroupValue('inp-pref');
+  const err    = document.getElementById('signup-err');
+  if (!name || !age || age < 18 || !gender || !pref) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  user    = { name, age, gender, preference: pref };
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  buildProgressDots();
+  renderQuestion();
+  showPage('page-quiz');
+}
+
+// ══════════════════════════════════════════════════════════
+//  QUIZ
+// ══════════════════════════════════════════════════════════
+function buildProgressDots() {
+  const wrap = document.getElementById('progress-dots');
+  wrap.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'progress-dot'; d.id = 'dot-' + i;
+    wrap.appendChild(d);
+  });
+}
+
+function updateDots() {
+  QUESTIONS.forEach((_, i) => {
+    const d = document.getElementById('dot-' + i);
+    if (d) d.className = 'progress-dot' + (i < current ? ' done' : i === current ? ' active' : '');
+  });
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  document.getElementById('q-step').textContent = (current + 1) + ' of ' + QUESTIONS.length;
+  document.getElementById('q-icon').textContent = q.icon;
+  document.getElementById('q-text').textContent = q.text;
+  const isLast = current === QUESTIONS.length - 1;
+  const btnNext = document.getElementById('btn-next');
+  const btnBack = document.getElementById('btn-back');
+  btnNext.textContent = isLast ? 'See my matches ✦' : 'Continue';
+  btnNext.disabled    = answers[current] === null;
+  btnBack.className   = 'btn-back' + (current === 0 ? ' hidden' : '');
+  updateDots();
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  q.options.forEach(function(opt, i) {
+    const div = document.createElement('div');
+    div.className = 'opt' + (answers[current] === i ? ' selected' : '') + ' slide-up';
+    div.style.animationDelay = (i * 0.05) + 's';
+    div.innerHTML = '<span class="opt-icon">' + opt.icon + '</span>' +
+      '<span class="opt-text">' + opt.text + '</span><span class="opt-check">✓</span>';
+    div.addEventListener('click', function() { selectAnswer(i); });
+    list.appendChild(div);
+  });
+
+  const body = document.getElementById('quiz-body');
+  body.classList.remove('slide-up'); void body.offsetWidth; body.classList.add('slide-up');
+}
+
+function selectAnswer(idx) {
+  answers[current] = idx;
+  document.querySelectorAll('.opt').forEach((el, i) => el.classList.toggle('selected', i === idx));
+  document.getElementById('btn-next').disabled = false;
+}
+
+function quizGo(dir) {
+  if (dir === 1) {
+    if (answers[current] === null) return;
+    if (current === QUESTIONS.length - 1) { buildMatches(); updateUserAvatar(); persistState(); showPage('page-matches'); return; }
+    current++;
+  } else {
+    if (current === 0) { showPage('page-signup'); return; }
+    current--;
+  }
+  renderQuestion();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeModal(); return; }
+  const quiz = document.getElementById('page-quiz');
+  if (!quiz.classList.contains('active')) return;
+  if (e.key === 'Enter' && answers[current] !== null) quizGo(1);
+  if (e.key === 'ArrowLeft' || e.key === 'Backspace') quizGo(-1);
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= QUESTIONS[current].options.length) selectAnswer(num - 1);
+});
+
+// ── Restore persisted session on load ──
+loadPersistedState();
+
+// ══════════════════════════════════════════════════════════
+//  MATCHING
+// ══════════════════════════════════════════════════════════
+function scoreProfile(userAns, profile) {
+  let earned = 0, max = 0;
+  QUESTIONS.forEach(function(q, i) {
+    const w = q.weight; max += w * 2;
+    const diff = Math.abs(userAns[i] - profile.answers[i]);
+    earned += (diff === 0 ? 2 : diff === 1 ? 1 : 0) * w;
+  });
+  return Math.round((earned / max) * 100);
+}
+
+function buildMatches() {
+  const pref = user.preference;
+  rankedProfiles = PROFILES
+    .filter(p => pref === 'any' || p.gender === pref)
+    .map(p    => Object.assign({}, p, { score: scoreProfile(answers, p) }))
+    .sort((a,b) => b.score - a.score);
+
+  document.getElementById('matches-greeting').innerHTML =
+    'Here are your matches, <strong>' + user.name + '</strong> 💘';
+  document.getElementById('matches-sub').textContent =
+    rankedProfiles.length + ' compatible ' + (rankedProfiles.length === 1 ? 'person' : 'people') +
+    ' · ranked by how well you align';
+
+  const grid = document.getElementById('matches-grid');
+  grid.innerHTML = '';
+
+  rankedProfiles.forEach(function(p, idx) {
+    const tags = [];
+    QUESTIONS.forEach(function(_, i) {
+      if (tags.length >= 3) return;
+      const map = TAG_MAP[i];
+      if (answers[i] === p.answers[i] && map[answers[i]]) tags.push(map[answers[i]]);
+    });
+
+    const card = document.createElement('div');
+    card.className = 'pcard fade-up';
+    card.style.animationDelay = Math.min(idx * 0.06, 0.6) + 's';
+    card.innerHTML =
+      '<div class="pcard-photo">' +
+        '<img src="' + p.photo + '" alt="' + p.name + '" loading="lazy"/>' +
+        '<div class="avatar-fallback">' + p.emoji + '</div>' +
+        '<div class="pcard-photo-overlay">' +
+          '<div class="pcard-name">' + p.name + ', ' + p.age + '</div>' +
+          '<div class="pcard-location">📍 ' + p.city + '</div>' +
+        '</div>' +
+        '<div class="match-pct-badge">' + p.score + '% match</div>' +
+        (idx === 0 ? '<div class="best-match-badge">✦ Best match</div>' : '') +
+      '</div>' +
+      '<div class="pcard-body">' +
+        '<div class="pcard-bio">' + p.bio + '</div>' +
+        '<div class="pcard-tags">' +
+          tags.map(t => '<span class="ptag shared">' + t + '</span>').join('') +
+        '</div>' +
+      '</div>';
+
+    card.addEventListener('click', function() { openModal(p.id); });
+    grid.appendChild(card);
+
+    const img = card.querySelector('img');
+    img.addEventListener('error', function() { img.classList.add('errored'); });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════════════════
+function openModal(profileId) {
+  const p = rankedProfiles.find(r => r.id === profileId);
+  if (!p) return;
+
+  // Photo
+  const modalImg = document.getElementById('modal-img');
+  const modalEmoji = document.getElementById('modal-emoji');
+  modalImg.src = p.photo;
+  modalImg.style.display = 'block';
+  modalEmoji.style.display = 'none';
+  modalImg.onerror = function() {
+    modalImg.style.display = 'none';
+    modalEmoji.style.display = 'flex';
+    modalEmoji.textContent = p.emoji;
+  };
+
+  // Name / meta
+  document.getElementById('modal-name').textContent = p.name + ', ' + p.age;
+  document.getElementById('modal-meta').innerHTML = '📍 ' + p.city;
+  document.getElementById('modal-bio').textContent = p.bio;
+
+  // Score ring (circumference for r=28: 2π×28 ≈ 175.93)
+  const C = 175.93;
+  const offset = C - (p.score / 100) * C;
+  document.getElementById('modal-ring-fill').style.strokeDashoffset = offset.toFixed(2);
+  document.getElementById('modal-pct').textContent = p.score + '%';
+
+  // Headline
+  const headline = p.score >= 90 ? 'Exceptional match' :
+                   p.score >= 75 ? 'Strong match' :
+                   p.score >= 60 ? 'Good match' :
+                   p.score >= 45 ? 'Moderate match' : 'Low compatibility';
+  document.getElementById('modal-headline').textContent = headline;
+  document.getElementById('modal-desc').textContent = 'You align on ' +
+    QUESTIONS.filter((_, i) => p.answers[i] === answers[i]).length + ' of 10 questions';
+
+  // Questions breakdown
+  const container = document.getElementById('modal-questions');
+  container.innerHTML = '';
+
+  QUESTIONS.forEach(function(q, i) {
+    const uAns   = answers[i];
+    const pAns   = p.answers[i];
+    const diff   = Math.abs(uAns - pAns);
+    const cls    = diff === 0 ? 'perfect' : diff === 1 ? 'close' : 'diff';
+    const label  = diff === 0 ? '✓ Perfect match' : diff === 1 ? '≈ Close' : '✗ Different';
+    const barPct = diff === 0 ? 100 : diff === 1 ? 50 : 8;
+
+    const uText = q.options[uAns] ? q.options[uAns].text : '—';
+    const pText = q.options[pAns] ? q.options[pAns].text : '—';
+
+    const row = document.createElement('div');
+    row.className = 'mq-row';
+    row.innerHTML =
+      '<div class="mq-header">' +
+        '<span class="mq-icon">' + q.icon + '</span>' +
+        '<span class="mq-label">' + q.text + '</span>' +
+        '<div class="mq-badges">' +
+          (q.weight > 1 ? '<span class="mq-weight-badge">Key</span>' : '') +
+          '<span class="mq-match-pill ' + cls + '">' + label + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="mq-answers">' +
+        '<div class="mq-answer-card you' + (diff === 0 ? ' matched' : '') + '">' +
+          '<div class="mq-answer-who">You</div>' +
+          '<div class="mq-answer-text">' + uText + '</div>' +
+        '</div>' +
+        '<div class="mq-answer-card them' + (diff === 0 ? ' matched' : '') + '">' +
+          '<div class="mq-answer-who">' + p.name + '</div>' +
+          '<div class="mq-answer-text">' + pText + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="mq-bar-track">' +
+        '<div class="mq-bar-fill ' + cls + '" style="width:' + barPct + '%"></div>' +
+      '</div>';
+
+    container.appendChild(row);
+  });
+
+  // Trigger bar animations after paint
+  requestAnimationFrame(function() {
+    container.querySelectorAll('.mq-bar-fill').forEach(function(el) {
+      const w = el.style.width; el.style.width = '0%';
+      requestAnimationFrame(function() { el.style.width = w; });
+    });
+  });
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PROFILE EDIT PAGE
+// ══════════════════════════════════════════════════════════
+function openProfilePage() {
+  document.getElementById('prof-name').value = user.name;
+  document.getElementById('prof-age').value  = user.age;
+  setBtnGroupValue('prof-gender', user.gender);
+  setBtnGroupValue('prof-pref',   user.preference);
+  document.getElementById('profile-err').style.display = 'none';
+
+  const img         = document.getElementById('photo-card-img');
+  const placeholder = document.getElementById('photo-placeholder');
+  const removeLink  = document.getElementById('photo-remove-link');
+  if (userPhoto) {
+    img.src = userPhoto; img.classList.add('has-photo');
+    placeholder.style.display = 'none'; removeLink.classList.add('visible');
+  } else {
+    img.src = ''; img.classList.remove('has-photo');
+    placeholder.style.display = 'flex'; removeLink.classList.remove('visible');
+  }
+
+  renderAnswerPills();
+  showPage('page-profile');
+}
+
+function renderAnswerPills() {
+  profileAnswers = [...answers];
+  const container = document.getElementById('profile-answers');
+  container.innerHTML = '';
+  QUESTIONS.forEach(function(q, qi) {
+    const card   = document.createElement('div');
+    card.className = 'answer-card';
+    const header = document.createElement('div');
+    header.className = 'answer-card-header';
+    header.innerHTML =
+      '<span class="answer-card-icon">' + q.icon + '</span>' +
+      '<span class="answer-card-label">' + q.text + '</span>' +
+      (q.weight > 1 ? '<span class="answer-key-badge">Key</span>' : '');
+    const pills = document.createElement('div');
+    pills.className = 'answer-pills';
+    q.options.forEach(function(opt, oi) {
+      const pill = document.createElement('button');
+      pill.className = 'answer-pill' + (profileAnswers[qi] === oi ? ' selected' : '');
+      pill.textContent = opt.icon + ' ' + opt.text;
+      pill.addEventListener('click', function() {
+        profileAnswers[qi] = oi;
+        pills.querySelectorAll('.answer-pill').forEach(function(p, pi) {
+          p.classList.toggle('selected', pi === oi);
+        });
+      });
+      pills.appendChild(pill);
+    });
+    card.appendChild(header);
+    card.appendChild(pills);
+    container.appendChild(card);
+  });
+}
+
+function triggerPhotoUpload() {
+  document.getElementById('photo-input').click();
+}
+
+function handlePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  resizePhoto(file, function(dataUrl) {
+    userPhoto = dataUrl;
+    const img = document.getElementById('photo-card-img');
+    img.src = dataUrl; img.classList.add('has-photo');
+    document.getElementById('photo-placeholder').style.display = 'none';
+    document.getElementById('photo-remove-link').classList.add('visible');
+    updateUserAvatar();
+  });
+  e.target.value = '';
+}
+
+function resizePhoto(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX = 400;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(e) {
+  e.stopPropagation();
+  userPhoto = null;
+  const img = document.getElementById('photo-card-img');
+  img.src = ''; img.classList.remove('has-photo');
+  document.getElementById('photo-placeholder').style.display = 'flex';
+  document.getElementById('photo-remove-link').classList.remove('visible');
+  updateUserAvatar();
+}
+
+function saveProfile() {
+  const name   = document.getElementById('prof-name').value.trim();
+  const age    = parseInt(document.getElementById('prof-age').value, 10);
+  const gender = getBtnGroupValue('prof-gender');
+  const pref   = getBtnGroupValue('prof-pref');
+  const err    = document.getElementById('profile-err');
+  if (!name || !age || age < 18 || !gender || !pref) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  user    = { name, age, gender, preference: pref };
+  answers = [...profileAnswers];
+  persistState();
+  buildMatches();
+  updateUserAvatar();
+  showPage('page-matches');
+}
+
+function updateUserAvatar() {
+  const btn      = document.getElementById('user-avatar-btn');
+  const img      = document.getElementById('user-avatar-img');
+  const initials = document.getElementById('user-avatar-initials');
+  if (!btn) return;
+  if (userPhoto) {
+    img.src = userPhoto; img.classList.add('has-photo');
+    initials.textContent = '';
+  } else {
+    img.classList.remove('has-photo');
+    initials.textContent = user ? user.name.charAt(0).toUpperCase() : '?';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  RESTART
+// ══════════════════════════════════════════════════════════
+function restart() {
+  if (!confirm('Start over and retake the quiz?')) return;
+  user = null; answers = new Array(QUESTIONS.length).fill(null); current = 0; userPhoto = null;
+  try {
+    localStorage.removeItem('spark_user');
+    localStorage.removeItem('spark_answers');
+    localStorage.removeItem('spark_photo');
+  } catch(e) {}
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-age').value  = '';
+  setBtnGroupValue('inp-gender', '');
+  setBtnGroupValue('inp-pref', '');
+  showPage('page-signup');
+}
+</script>
+</body>
+</html>
