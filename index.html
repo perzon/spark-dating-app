@@ -1077,27 +1077,39 @@ let PROFILES         = [];
 //  SUPABASE PERSISTENCE
 // ══════════════════════════════════════════════════════════
 async function initApp() {
+  let ready = false;
+
   supabase.auth.onAuthStateChange(async (event, session) => {
-    try {
-      if (event === 'INITIAL_SESSION') {
-        if (session) await handleSignedIn(session);
-        else showPage('page-signup');
-      } else if (event === 'SIGNED_IN') {
-        await handleSignedIn(session);
-      } else if (event === 'SIGNED_OUT') {
-        showPage('page-signup');
-      }
-    } catch(e) {
-      console.error('initApp failed:', e);
-      showPage('page-signup');
+    console.log('[spark] auth event:', event, 'session:', !!session);
+    if (event === 'SIGNED_OUT') { showPage('page-signup'); return; }
+    if (!ready) return;
+    if (event === 'SIGNED_IN') {
+      try { await handleSignedIn(session); }
+      catch(e) { console.error('[spark] handleSignedIn error:', e); showPage('page-signup'); }
     }
   });
+
+  try {
+    console.log('[spark] calling getSession...');
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('[spark] getSession done, session:', !!session);
+    ready = true;
+    if (session) await handleSignedIn(session);
+    else showPage('page-signup');
+  } catch(e) {
+    ready = true;
+    console.error('[spark] initApp failed:', e);
+    showPage('page-signup');
+  }
 }
 
 async function handleSignedIn(session) {
   try {
+    console.log('[spark] handleSignedIn start');
     await loadMatchProfiles();
+    console.log('[spark] profiles loaded:', PROFILES.length);
     const exists = await loadUserProfile(session.user.id);
+    console.log('[spark] user profile exists:', exists);
     if (exists) {
       buildMatches(); updateUserAvatar(); showPage('page-matches');
     } else {
@@ -1111,7 +1123,7 @@ async function handleSignedIn(session) {
       }
     }
   } catch(e) {
-    console.error('handleSignedIn failed:', e);
+    console.error('[spark] handleSignedIn failed:', e);
     showPage('page-signup');
   }
 }
