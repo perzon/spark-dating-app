@@ -1272,7 +1272,11 @@ function selectAnswer(idx) {
 async function quizGo(dir) {
   if (dir === 1) {
     if (answers[current] === null) return;
-    if (current === QUESTIONS.length - 1) { buildMatches(); updateUserAvatar(); await saveUserProfileToDb(); showPage('page-matches'); return; }
+    if (current === QUESTIONS.length - 1) {
+      buildMatches(); updateUserAvatar();
+      try { await saveUserProfileToDb(); } catch(e) { console.error('saveUserProfileToDb failed:', e); }
+      showPage('page-matches'); return;
+    }
     current++;
   } else {
     if (current === 0) { showPage('page-signup'); return; }
@@ -1576,7 +1580,7 @@ async function saveProfile() {
   err.style.display = 'none';
   user    = { name, age, gender, preference: pref };
   answers = [...profileAnswers];
-  await saveUserProfileToDb();
+  try { await saveUserProfileToDb(); } catch(e) { console.error('saveUserProfileToDb failed:', e); }
   buildMatches();
   updateUserAvatar();
   showPage('page-matches');
