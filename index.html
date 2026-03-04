@@ -1078,17 +1078,20 @@ let PROFILES         = [];
 // ══════════════════════════════════════════════════════════
 async function initApp() {
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN') await handleSignedIn(session);
-    if (event === 'SIGNED_OUT') showPage('page-signup');
+    try {
+      if (event === 'INITIAL_SESSION') {
+        if (session) await handleSignedIn(session);
+        else showPage('page-signup');
+      } else if (event === 'SIGNED_IN') {
+        await handleSignedIn(session);
+      } else if (event === 'SIGNED_OUT') {
+        showPage('page-signup');
+      }
+    } catch(e) {
+      console.error('initApp failed:', e);
+      showPage('page-signup');
+    }
   });
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) await handleSignedIn(session);
-    else showPage('page-signup');
-  } catch(e) {
-    console.error('initApp failed:', e);
-    showPage('page-signup');
-  }
 }
 
 async function handleSignedIn(session) {
