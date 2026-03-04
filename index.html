@@ -1081,25 +1081,35 @@ async function initApp() {
     if (event === 'SIGNED_IN') await handleSignedIn(session);
     if (event === 'SIGNED_OUT') showPage('page-signup');
   });
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) await handleSignedIn(session);
-  else showPage('page-signup');
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) await handleSignedIn(session);
+    else showPage('page-signup');
+  } catch(e) {
+    console.error('initApp failed:', e);
+    showPage('page-signup');
+  }
 }
 
 async function handleSignedIn(session) {
-  await loadMatchProfiles();
-  const exists = await loadUserProfile(session.user.id);
-  if (exists) {
-    buildMatches(); updateUserAvatar(); showPage('page-matches');
-  } else {
-    const pending = JSON.parse(sessionStorage.getItem('spark_pending') || 'null');
-    if (pending) {
-      user = pending; answers = new Array(QUESTIONS.length).fill(null);
-      sessionStorage.removeItem('spark_pending');
-      current = 0; buildProgressDots(); renderQuestion(); showPage('page-quiz');
+  try {
+    await loadMatchProfiles();
+    const exists = await loadUserProfile(session.user.id);
+    if (exists) {
+      buildMatches(); updateUserAvatar(); showPage('page-matches');
     } else {
-      showPage('page-signup');
+      const pending = JSON.parse(sessionStorage.getItem('spark_pending') || 'null');
+      if (pending) {
+        user = pending; answers = new Array(QUESTIONS.length).fill(null);
+        sessionStorage.removeItem('spark_pending');
+        current = 0; buildProgressDots(); renderQuestion(); showPage('page-quiz');
+      } else {
+        showPage('page-signup');
+      }
     }
+  } catch(e) {
+    console.error('handleSignedIn failed:', e);
+    showPage('page-signup');
   }
 }
 
