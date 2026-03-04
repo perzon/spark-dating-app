@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script type="importmap">
+  {"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2"}}
+  </script>
   <style>
     /* ─── RESET ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -721,8 +724,16 @@
 <body>
 <div id="app">
 
+  <!-- ══════════════════ LOADING ══════════════════ -->
+  <div id="page-loading" class="page active" style="display:flex;align-items:center;justify-content:center;">
+    <div style="text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:600;color:var(--rose);">Spark ✦</div>
+      <div style="margin-top:12px;color:var(--muted);font-size:0.88rem;">Loading…</div>
+    </div>
+  </div>
+
   <!-- ══════════════════ SIGNUP ══════════════════ -->
-  <div id="page-signup" class="page active">
+  <div id="page-signup" class="page">
     <div class="signup-hero">
       <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=900&h=1200&fit=crop&q=85" alt=""/>
       <div class="signup-hero-overlay">
@@ -779,8 +790,17 @@
             </button>
           </div>
         </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="inp-email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
         <p id="signup-err" class="form-error">Please fill in all fields to continue.</p>
-        <button class="cta-btn" onclick="startQuiz()">Begin the quiz &nbsp;→</button>
+        <div id="magic-link-sent" style="display:none;text-align:center;padding:24px 0;">
+          <div style="font-size:2rem;">📬</div>
+          <div style="margin-top:10px;font-weight:600;color:var(--text);">Check your inbox</div>
+          <div style="margin-top:6px;font-size:0.85rem;color:var(--muted);" id="magic-link-hint"></div>
+        </div>
+        <button class="cta-btn" onclick="sendMagicLink()">Continue &nbsp;→</button>
       </div>
     </div>
   </div>
@@ -951,7 +971,12 @@
 
 </div><!-- /app -->
 
-<script>
+<script type="module">
+import { createClient } from '@supabase/supabase-js';
+const SUPABASE_URL  = 'https://YOUR_REF.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_KEY';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
 // ══════════════════════════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════════════════════════
@@ -1035,61 +1060,110 @@ const TAG_MAP = [
   ['Romantic','Stable','Goal-oriented','Adventurous']
 ];
 
-const PROFILES = [
-  { id:0,  name:'Emma',   age:27, gender:'woman', city:'Stockholm',   photo:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,2,1,1,2,0,1,2,0], bio:'Coffee addict, dog lover, and weekend trail runner.' },
-  { id:1,  name:'Liam',   age:30, gender:'man',   city:'Gothenburg',  photo:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,0,1,2,1,1,0,2,0,3], bio:'Software engineer by day, rock climber by weekend.' },
-  { id:2,  name:'Sofia',  age:25, gender:'woman', city:'Malmö',       photo:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[2,0,0,0,2,1,2,0,3,1], bio:'Illustrator and introvert who loves rainy Sundays with a good book.' },
-  { id:3,  name:'Oscar',  age:32, gender:'man',   city:'Uppsala',     photo:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[1,1,1,1,1,2,1,1,1,2], bio:'Teacher, amateur chef, and forever curious about the world.' },
-  { id:4,  name:'Maja',   age:28, gender:'woman', city:'Linköping',   photo:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[0,2,2,1,0,0,3,2,1,3], bio:'Spontaneous traveler who turned wanderlust into a lifestyle.' },
-  { id:5,  name:'Erik',   age:35, gender:'man',   city:'Stockholm',   photo:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[2,0,0,0,2,1,2,1,3,1], bio:'Writer and minimalist. Passionate about slow mornings and good coffee.' },
-  { id:6,  name:'Klara',  age:29, gender:'woman', city:'Örebro',      photo:'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,1,1,2,1,2,0,1,0,2], bio:'Marketing manager who unwinds by trail running and cold dips.' },
-  { id:7,  name:'Noah',   age:26, gender:'man',   city:'Västerås',    photo:'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,0,2,0,0,2,0,2,1,3], bio:'Passionate cook, city explorer, and live-music junkie.' },
-  { id:8,  name:'Elin',   age:31, gender:'woman', city:'Helsingborg', photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,1,2,1,1,1,1,2,2], bio:'Startup founder who still makes time for yoga and long dinners with friends.' },
-  { id:9,  name:'Lucas',  age:28, gender:'man',   city:'Lund',        photo:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,1,0,1,0,0,3,0,3,3], bio:'Philosophy grad, board game enthusiast, and proud cat dad.' },
-  { id:10, name:'Astrid', age:33, gender:'woman', city:'Norrköping',  photo:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[2,0,0,0,2,2,2,1,3,1], bio:'Nurse and herbalist who deeply values quality time and real connection.' },
-  { id:11, name:'Felix',  age:27, gender:'man',   city:'Umeå',        photo:'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[0,2,2,1,0,2,3,2,3,0], bio:'Musician and snowboarder who lives for the next great experience.' },
-  { id:12, name:'Saga',   age:24, gender:'woman', city:'Jönköping',   photo:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[1,0,1,2,1,1,0,1,3,2], bio:'Biology student who finds magic in forests and the way science explains the world.' },
-  { id:13, name:'Axel',   age:34, gender:'man',   city:'Borås',       photo:'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👨', answers:[1,0,2,2,1,2,1,2,0,0], bio:'Personal trainer, film nerd, and unashamed hopeless romantic.' },
-  { id:14, name:'Vera',   age:26, gender:'woman', city:'Eskilstuna',  photo:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop&crop=faces&q=85', emoji:'👩', answers:[0,1,1,1,0,1,3,0,2,3], bio:'Aerospace engineer who designs rockets but prefers hammocks and campfires.' }
-];
-
 // ══════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════
-let user           = null;
-let answers        = new Array(QUESTIONS.length).fill(null);
-let current        = 0;
-let rankedProfiles = [];
-let userPhoto      = null;
-let profileAnswers = [];
+let user             = null;
+let answers          = new Array(QUESTIONS.length).fill(null);
+let current          = 0;
+let rankedProfiles   = [];
+let userPhoto        = null;
+let userPhotoFile    = null;
+let currentPhotoPath = null;
+let profileAnswers   = [];
+let PROFILES         = [];
 
 // ══════════════════════════════════════════════════════════
-//  PERSISTENCE
+//  SUPABASE PERSISTENCE
 // ══════════════════════════════════════════════════════════
-function persistState() {
-  try {
-    localStorage.setItem('spark_user', JSON.stringify(user));
-    localStorage.setItem('spark_answers', JSON.stringify(answers));
-    localStorage.setItem('spark_photo', userPhoto || '');
-  } catch(e) {}
+async function initApp() {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN') await handleSignedIn(session);
+    if (event === 'SIGNED_OUT') showPage('page-signup');
+  });
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) await handleSignedIn(session);
+  else showPage('page-signup');
 }
 
-function loadPersistedState() {
-  try {
-    const savedUser    = localStorage.getItem('spark_user');
-    const savedAnswers = localStorage.getItem('spark_answers');
-    const savedPhoto   = localStorage.getItem('spark_photo');
-    if (savedUser && savedAnswers) {
-      user      = JSON.parse(savedUser);
-      answers   = JSON.parse(savedAnswers);
-      userPhoto = savedPhoto || null;
-      buildMatches();
-      updateUserAvatar();
-      showPage('page-matches');
-      return true;
+async function handleSignedIn(session) {
+  await loadMatchProfiles();
+  const exists = await loadUserProfile(session.user.id);
+  if (exists) {
+    buildMatches(); updateUserAvatar(); showPage('page-matches');
+  } else {
+    const pending = JSON.parse(sessionStorage.getItem('spark_pending') || 'null');
+    if (pending) {
+      user = pending; answers = new Array(QUESTIONS.length).fill(null);
+      sessionStorage.removeItem('spark_pending');
+      current = 0; buildProgressDots(); renderQuestion(); showPage('page-quiz');
+    } else {
+      showPage('page-signup');
     }
-  } catch(e) {}
-  return false;
+  }
+}
+
+async function loadMatchProfiles() {
+  const { data, error } = await supabase
+    .from('profiles').select('id,name,age,gender,city,photo_url,emoji,answers,bio').order('id');
+  if (error) throw error;
+  PROFILES = data.map(p => ({ ...p, photo: p.photo_url }));
+}
+
+async function loadUserProfile(userId) {
+  const { data } = await supabase.from('user_profiles').select('*').eq('id', userId).single();
+  if (!data) return false;
+  user    = { name: data.name, age: data.age, gender: data.gender, preference: data.preference };
+  answers = data.answers;
+  currentPhotoPath = data.photo_path || null;
+  userPhoto = currentPhotoPath
+    ? supabase.storage.from('avatars').getPublicUrl(currentPhotoPath).data.publicUrl
+    : null;
+  return true;
+}
+
+async function saveUserProfileToDb() {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  let photoPath = currentPhotoPath;
+  if (userPhotoFile) { photoPath = await uploadPhoto(); userPhotoFile = null; }
+  else if (userPhoto === null) { photoPath = null; }
+  currentPhotoPath = photoPath;
+  const { error } = await supabase.from('user_profiles').upsert({
+    id: authUser.id, name: user.name, age: user.age,
+    gender: user.gender, preference: user.preference, answers, photo_path: photoPath
+  });
+  if (error) throw error;
+}
+
+async function uploadPhoto() {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const path = `avatars/${authUser.id}/${authUser.id}.jpg`;
+  const blob = await fetch(userPhoto).then(r => r.blob());
+  const { error } = await supabase.storage.from('avatars').upload(path, blob, {
+    contentType: 'image/jpeg', upsert: true
+  });
+  if (error) throw error;
+  return path;
+}
+
+async function sendMagicLink() {
+  const name   = document.getElementById('inp-name').value.trim();
+  const age    = parseInt(document.getElementById('inp-age').value, 10);
+  const gender = getBtnGroupValue('inp-gender');
+  const pref   = getBtnGroupValue('inp-pref');
+  const email  = document.getElementById('inp-email').value.trim();
+  const err    = document.getElementById('signup-err');
+  if (!name || !age || age < 18 || !gender || !pref || !email) {
+    err.textContent = 'Please fill in all fields to continue.';
+    err.style.display = 'block'; return;
+  }
+  err.style.display = 'none';
+  sessionStorage.setItem('spark_pending', JSON.stringify({ name, age, gender, preference: pref }));
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  document.getElementById('magic-link-hint').textContent = 'We sent a link to ' + email;
+  document.getElementById('magic-link-sent').style.display = 'block';
+  document.querySelector('.cta-btn').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1195,10 +1269,10 @@ function selectAnswer(idx) {
   document.getElementById('btn-next').disabled = false;
 }
 
-function quizGo(dir) {
+async function quizGo(dir) {
   if (dir === 1) {
     if (answers[current] === null) return;
-    if (current === QUESTIONS.length - 1) { buildMatches(); updateUserAvatar(); persistState(); showPage('page-matches'); return; }
+    if (current === QUESTIONS.length - 1) { buildMatches(); updateUserAvatar(); await saveUserProfileToDb(); showPage('page-matches'); return; }
     current++;
   } else {
     if (current === 0) { showPage('page-signup'); return; }
@@ -1216,9 +1290,6 @@ document.addEventListener('keydown', function(e) {
   const num = parseInt(e.key);
   if (num >= 1 && num <= QUESTIONS[current].options.length) selectAnswer(num - 1);
 });
-
-// ── Restore persisted session on load ──
-loadPersistedState();
 
 // ══════════════════════════════════════════════════════════
 //  MATCHING
@@ -1456,6 +1527,7 @@ function handlePhotoUpload(e) {
   if (!file) return;
   resizePhoto(file, function(dataUrl) {
     userPhoto = dataUrl;
+    userPhotoFile = file;
     const img = document.getElementById('photo-card-img');
     img.src = dataUrl; img.classList.add('has-photo');
     document.getElementById('photo-placeholder').style.display = 'none';
@@ -1486,7 +1558,7 @@ function resizePhoto(file, callback) {
 
 function removePhoto(e) {
   e.stopPropagation();
-  userPhoto = null;
+  userPhoto = null; userPhotoFile = null; currentPhotoPath = null;
   const img = document.getElementById('photo-card-img');
   img.src = ''; img.classList.remove('has-photo');
   document.getElementById('photo-placeholder').style.display = 'flex';
@@ -1494,7 +1566,7 @@ function removePhoto(e) {
   updateUserAvatar();
 }
 
-function saveProfile() {
+async function saveProfile() {
   const name   = document.getElementById('prof-name').value.trim();
   const age    = parseInt(document.getElementById('prof-age').value, 10);
   const gender = getBtnGroupValue('prof-gender');
@@ -1504,7 +1576,7 @@ function saveProfile() {
   err.style.display = 'none';
   user    = { name, age, gender, preference: pref };
   answers = [...profileAnswers];
-  persistState();
+  await saveUserProfileToDb();
   buildMatches();
   updateUserAvatar();
   showPage('page-matches');
@@ -1527,20 +1599,29 @@ function updateUserAvatar() {
 // ══════════════════════════════════════════════════════════
 //  RESTART
 // ══════════════════════════════════════════════════════════
-function restart() {
+async function restart() {
   if (!confirm('Start over and retake the quiz?')) return;
-  user = null; answers = new Array(QUESTIONS.length).fill(null); current = 0; userPhoto = null;
-  try {
-    localStorage.removeItem('spark_user');
-    localStorage.removeItem('spark_answers');
-    localStorage.removeItem('spark_photo');
-  } catch(e) {}
-  document.getElementById('inp-name').value = '';
-  document.getElementById('inp-age').value  = '';
-  setBtnGroupValue('inp-gender', '');
-  setBtnGroupValue('inp-pref', '');
+  user = null; answers = new Array(QUESTIONS.length).fill(null);
+  current = 0; userPhoto = null; userPhotoFile = null; currentPhotoPath = null;
+  await supabase.auth.signOut();
+  document.getElementById('inp-name').value  = '';
+  document.getElementById('inp-age').value   = '';
+  document.getElementById('inp-email').value = '';
+  setBtnGroupValue('inp-gender', ''); setBtnGroupValue('inp-pref', '');
+  document.getElementById('magic-link-sent').style.display = 'none';
+  document.querySelector('.cta-btn').style.display = 'block';
   showPage('page-signup');
 }
+
+// ── Bootstrap ──
+initApp();
+
+// ── Expose functions for HTML onclick attributes (module scope) ──
+Object.assign(window, {
+  quizGo, selectAnswer, selectBtnGroup, openModal, closeModal,
+  handleOverlayClick, openProfilePage, saveProfile, triggerPhotoUpload,
+  handlePhotoUpload, removePhoto, restart, sendMagicLink
+});
 </script>
 </body>
 </html>
